@@ -85,16 +85,16 @@ func TestCreateUser_Success(t *testing.T) {
 	// Given: Empty repository
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	newUser := &model.User{
 		Username: "newuser",
 		Email:    "newuser@example.com",
 		FullName: "New User",
 	}
-	
+
 	// When: Creating a new user
 	err := service.Create(newUser)
-	
+
 	// Then: User should be created successfully
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -111,7 +111,7 @@ func TestCreateUser_DuplicateUsername(t *testing.T) {
 	// Given: Repository with existing user
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	existingUser := &model.User{
 		UUID:     "existing-uuid",
 		Username: "existinguser",
@@ -119,16 +119,16 @@ func TestCreateUser_DuplicateUsername(t *testing.T) {
 		FullName: "Existing User",
 	}
 	repo.users["existing-uuid"] = existingUser
-	
+
 	newUser := &model.User{
 		Username: "existinguser", // Same username
 		Email:    "new@example.com",
 		FullName: "New User",
 	}
-	
+
 	// When: Trying to create user with duplicate username
 	err := service.Create(newUser)
-	
+
 	// Then: Should return error
 	if err == nil {
 		t.Error("expected error for duplicate username")
@@ -143,7 +143,7 @@ func TestUpdateUser_Success(t *testing.T) {
 	// Given: Repository with existing user
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	existingUser := &model.User{
 		ID:       1,
 		UUID:     "test-uuid",
@@ -152,21 +152,21 @@ func TestUpdateUser_Success(t *testing.T) {
 		FullName: "Old Name",
 	}
 	repo.users["test-uuid"] = existingUser
-	
+
 	updatedUser := &model.User{
 		Username: "newusername",
 		Email:    "new@example.com",
 		FullName: "New Name",
 	}
-	
+
 	// When: Updating the user
 	err := service.Update("test-uuid", updatedUser)
-	
+
 	// Then: User should be updated successfully
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-	
+
 	user, _ := repo.GetByUUID("test-uuid")
 	if user.Username != "newusername" {
 		t.Errorf("expected username 'newusername', got %s", user.Username)
@@ -177,16 +177,16 @@ func TestUpdateUser_NotFound(t *testing.T) {
 	// Given: Empty repository
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	updatedUser := &model.User{
 		Username: "newusername",
 		Email:    "new@example.com",
 		FullName: "New Name",
 	}
-	
+
 	// When: Trying to update non-existent user
 	err := service.Update("non-existent-uuid", updatedUser)
-	
+
 	// Then: Should return error
 	if err == nil {
 		t.Error("expected error for non-existent user")
@@ -201,7 +201,7 @@ func TestDeleteUser_Success(t *testing.T) {
 	// Given: Repository with existing user
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	existingUser := &model.User{
 		ID:       1,
 		UUID:     "test-uuid",
@@ -210,15 +210,15 @@ func TestDeleteUser_Success(t *testing.T) {
 		FullName: "Test User",
 	}
 	repo.users["test-uuid"] = existingUser
-	
+
 	// When: Deleting the user
 	err := service.Delete("test-uuid")
-	
+
 	// Then: User should be deleted successfully
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-	
+
 	_, err = repo.GetByUUID("test-uuid")
 	if err != sql.ErrNoRows {
 		t.Error("expected user to be deleted")
@@ -229,10 +229,10 @@ func TestDeleteUser_NotFound(t *testing.T) {
 	// Given: Empty repository
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	// When: Trying to delete non-existent user
 	err := service.Delete("non-existent-uuid")
-	
+
 	// Then: Should return error
 	if err == nil {
 		t.Error("expected error for non-existent user")
@@ -247,7 +247,7 @@ func TestGetByUsername_Success(t *testing.T) {
 	// Given: Repository with existing user
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	existingUser := &model.User{
 		ID:       1,
 		UUID:     "test-uuid",
@@ -256,10 +256,10 @@ func TestGetByUsername_Success(t *testing.T) {
 		FullName: "Test User",
 	}
 	repo.users["test-uuid"] = existingUser
-	
+
 	// When: Getting user by username
 	user, err := service.GetByUsername("testuser")
-	
+
 	// Then: Should return the user
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -276,10 +276,10 @@ func TestGetByUsername_NotFound(t *testing.T) {
 	// Given: Empty repository
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	// When: Getting non-existent user
 	user, err := service.GetByUsername("nonexistent")
-	
+
 	// Then: Should return error
 	if err == nil {
 		t.Error("expected error for non-existent user")
@@ -297,7 +297,7 @@ func TestGetByID_Success(t *testing.T) {
 	// Given: Repository with existing user
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	existingUser := &model.User{
 		ID:       1,
 		UUID:     "test-uuid",
@@ -306,10 +306,10 @@ func TestGetByID_Success(t *testing.T) {
 		FullName: "Test User",
 	}
 	repo.users["test-uuid"] = existingUser
-	
+
 	// When: Getting user by ID
 	user, err := service.GetByID(1)
-	
+
 	// Then: Should return the user
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -326,10 +326,10 @@ func TestGetByID_NotFound(t *testing.T) {
 	// Given: Empty repository
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	// When: Getting non-existent user
 	user, err := service.GetByID(999)
-	
+
 	// Then: Should return error
 	if err == nil {
 		t.Error("expected error for non-existent user")
@@ -347,7 +347,7 @@ func TestGetAll_Success(t *testing.T) {
 	// Given: Repository with multiple users
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	user1 := &model.User{
 		ID:       1,
 		UUID:     "uuid-1",
@@ -364,10 +364,10 @@ func TestGetAll_Success(t *testing.T) {
 	}
 	repo.users["uuid-1"] = user1
 	repo.users["uuid-2"] = user2
-	
+
 	// When: Getting all users
 	users, err := service.GetAll()
-	
+
 	// Then: Should return all users
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -381,10 +381,10 @@ func TestGetAll_Empty(t *testing.T) {
 	// Given: Empty repository
 	repo := newMockUserRepository()
 	service := NewUserService(repo)
-	
+
 	// When: Getting all users
 	users, err := service.GetAll()
-	
+
 	// Then: Should return empty list
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

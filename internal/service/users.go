@@ -11,10 +11,10 @@ type UserService interface {
 	GetAll() ([]model.User, error)
 	GetByUsername(username string) (*model.User, error)
 	GetByID(id int64) (*model.User, error)
-	GetByUUID(uuid string) (*model.User, error)     // Task3
-	Create(user *model.User) error                  // Task3
-	Update(uuid string, user *model.User) error     // Task3
-	Delete(uuid string) error        				// Task3
+	GetByUUID(uuid string) (*model.User, error) // Task3
+	Create(user *model.User) error              // Task3
+	Update(uuid string, user *model.User) error // Task3
+	Delete(uuid string) error                   // Task3
 }
 
 type userService struct {
@@ -32,10 +32,10 @@ func (s *userService) GetAll() ([]model.User, error) {
 func (s *userService) GetByUsername(username string) (*model.User, error) {
 	user, err := s.repo.GetByUsername(username)
 	if err != nil {
-       		if err == sql.ErrNoRows {
-		        return nil, errors.New("users not found") // Task2
-	        }
-        	return nil, err
+		if err == sql.ErrNoRows {
+			return nil, errors.New("users not found") // Task2
+		}
+		return nil, err
 	}
 	return user, nil
 }
@@ -68,7 +68,7 @@ func (s *userService) Create(user *model.User) error {
 	if existingUser != nil {
 		return errors.New("username already exists")
 	}
-	
+
 	return s.repo.Create(user)
 }
 
@@ -89,7 +89,7 @@ func (s *userService) Update(uuid string, user *model.User) error {
 			return errors.New("username already exists")
 		}
 	}
-	
+
 	return s.repo.Update(uuid, user)
 }
 

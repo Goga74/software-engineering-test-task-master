@@ -10,10 +10,10 @@ type UserRepository interface {
 	GetAll() ([]model.User, error)
 	GetByUsername(username string) (*model.User, error)
 	GetByID(id int64) (*model.User, error)
-	GetByUUID(uuid string) (*model.User, error)  // Task3
-	Create(user *model.User) error               // Task3
-	Update(uuid string, user *model.User) error  // Task3
-	Delete(uuid string) error    				 // Task3
+	GetByUUID(uuid string) (*model.User, error) // Task3
+	Create(user *model.User) error              // Task3
+	Update(uuid string, user *model.User) error // Task3
+	Delete(uuid string) error                   // Task3
 }
 
 type userRepository struct {
@@ -73,7 +73,7 @@ func (r *userRepository) GetByID(id int64) (*model.User, error) {
 
 func (r *userRepository) GetByUUID(uuid string) (*model.User, error) {
 	var u model.User
-	if err := r.db.QueryRowContext(context.Background(), 
+	if err := r.db.QueryRowContext(context.Background(),
 		`SELECT id, uuid, username, email, full_name FROM users WHERE uuid = $1`, uuid).
 		Scan(&u.ID, &u.UUID, &u.Username, &u.Email, &u.FullName); err != nil {
 		if err == sql.ErrNoRows {
