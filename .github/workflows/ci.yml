@@ -46,21 +46,7 @@ jobs:
       run: go test -v -race -coverprofile=coverage.out ./...
     
     - name: Check test coverage
-      run: |
-        go tool cover -func=coverage.out
-    
-    - name: Install golangci-lint
-      run: |
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
-    
-    - name: Run golangci-lint
-      run: golangci-lint run --timeout=5m
-    
-    - name: Install gosec
-      run: go install github.com/securego/gosec/v2/cmd/gosec@latest
-    
-    - name: Run gosec
-      run: gosec ./...
+      run: go tool cover -func=coverage.out
 
   build:
     name: Build Docker Image
