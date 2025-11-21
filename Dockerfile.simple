@@ -1,0 +1,15 @@
+#Note: Using postgres:16 as base image due to network issues with Docker Hub. 
+#In production, should use alpine:latest for minimal image size.
+FROM postgres:16
+
+WORKDIR /root/
+
+# Copy pre-built binary
+COPY main .
+
+# Copy migrations
+COPY migrations ./migrations
+
+EXPOSE 8080
+
+CMD ["./main"]
