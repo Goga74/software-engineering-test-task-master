@@ -5,10 +5,11 @@ import (
 	"strconv"
 
 	"cruder/internal/service"
+	"cruder/internal/model" // Task3
 
 	"github.com/gin-gonic/gin"
 
-	"log"
+	//"log"
 )
 
 type UserController struct {
@@ -57,4 +58,66 @@ func (c *UserController) GetUserByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user)
+}
+
+// POST /api/v1/users - CREATE
+func (c *UserController) CreateUser(ctx *gin.Context) {
+	var user model.User
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	
+	if err := c.service.Create(&user); err != nil {
+		if err.Error() == "username already exists" {
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	ctx.JSON(http.StatusCreated, user)
+}
+
+// PATCH /api/v1/users/:uuid - UPDATE
+func (c *UserController) UpdateUser(ctx *gin.Context) {
+	uuid := ctx.Param("uuid")
+	
+	var user model.User
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	
+	if err := c.service.Update(uuid, &user); err != nil {
+		if err.Error() == "users not found" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		if err.Error() == "username already exists" {
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	ctx.JSON(http.StatusOK, gin.H{"message": "user updated successfully"})
+}
+
+// DELETE /api/v1/users/:uuid
+func (c *UserController) DeleteUser(ctx *gin.Context) {
+	uuid := ctx.Param("uuid")
+	
+	if err := c.service.Delete(uuid); err != nil {
+		if err.Error() == "users not found" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	ctx.JSON(http.StatusNoContent, nil)
 }
