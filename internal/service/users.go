@@ -33,7 +33,7 @@ func (s *userService) GetByUsername(username string) (*model.User, error) {
 	user, err := s.repo.GetByUsername(username)
 	if err != nil {
        		if err == sql.ErrNoRows {
-		        return nil, errors.New("users not found")
+		        return nil, errors.New("users not found") // Task2
 	        }
         	return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *userService) GetByID(id int64) (*model.User, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("users not found")
+			return nil, errors.New("users not found") // Task2
 		}
 		return nil, err
 	}
