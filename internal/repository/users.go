@@ -4,6 +4,8 @@ import (
 	"context"
 	"cruder/internal/model"
 	"database/sql"
+
+	"log"
 )
 
 type UserRepository interface {
@@ -29,7 +31,10 @@ func (r *userRepository) GetAll() ([]model.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func()
+	if err := rows.Close(); err != nil {
+        	log.Printf("failed to close rows: %v", err)
+	}()
 
 	var users []model.User
 	for rows.Next() {
