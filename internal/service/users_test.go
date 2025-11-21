@@ -241,3 +241,155 @@ func TestDeleteUser_NotFound(t *testing.T) {
 		t.Errorf("expected 'users not found', got %v", err)
 	}
 }
+
+// Tests for GetByUsername
+func TestGetByUsername_Success(t *testing.T) {
+	// Given: Repository with existing user
+	repo := newMockUserRepository()
+	service := NewUserService(repo)
+	
+	existingUser := &model.User{
+		ID:       1,
+		UUID:     "test-uuid",
+		Username: "testuser",
+		Email:    "test@example.com",
+		FullName: "Test User",
+	}
+	repo.users["test-uuid"] = existingUser
+	
+	// When: Getting user by username
+	user, err := service.GetByUsername("testuser")
+	
+	// Then: Should return the user
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if user == nil {
+		t.Fatal("expected user, got nil")
+	}
+	if user.Username != "testuser" {
+		t.Errorf("expected username 'testuser', got %s", user.Username)
+	}
+}
+
+func TestGetByUsername_NotFound(t *testing.T) {
+	// Given: Empty repository
+	repo := newMockUserRepository()
+	service := NewUserService(repo)
+	
+	// When: Getting non-existent user
+	user, err := service.GetByUsername("nonexistent")
+	
+	// Then: Should return error
+	if err == nil {
+		t.Error("expected error for non-existent user")
+	}
+	if err.Error() != "users not found" {
+		t.Errorf("expected 'users not found', got %v", err)
+	}
+	if user != nil {
+		t.Error("expected nil user")
+	}
+}
+
+// Tests for GetByID
+func TestGetByID_Success(t *testing.T) {
+	// Given: Repository with existing user
+	repo := newMockUserRepository()
+	service := NewUserService(repo)
+	
+	existingUser := &model.User{
+		ID:       1,
+		UUID:     "test-uuid",
+		Username: "testuser",
+		Email:    "test@example.com",
+		FullName: "Test User",
+	}
+	repo.users["test-uuid"] = existingUser
+	
+	// When: Getting user by ID
+	user, err := service.GetByID(1)
+	
+	// Then: Should return the user
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if user == nil {
+		t.Fatal("expected user, got nil")
+	}
+	if user.ID != 1 {
+		t.Errorf("expected ID 1, got %d", user.ID)
+	}
+}
+
+func TestGetByID_NotFound(t *testing.T) {
+	// Given: Empty repository
+	repo := newMockUserRepository()
+	service := NewUserService(repo)
+	
+	// When: Getting non-existent user
+	user, err := service.GetByID(999)
+	
+	// Then: Should return error
+	if err == nil {
+		t.Error("expected error for non-existent user")
+	}
+	if err.Error() != "users not found" {
+		t.Errorf("expected 'users not found', got %v", err)
+	}
+	if user != nil {
+		t.Error("expected nil user")
+	}
+}
+
+// Tests for GetAll
+func TestGetAll_Success(t *testing.T) {
+	// Given: Repository with multiple users
+	repo := newMockUserRepository()
+	service := NewUserService(repo)
+	
+	user1 := &model.User{
+		ID:       1,
+		UUID:     "uuid-1",
+		Username: "user1",
+		Email:    "user1@example.com",
+		FullName: "User One",
+	}
+	user2 := &model.User{
+		ID:       2,
+		UUID:     "uuid-2",
+		Username: "user2",
+		Email:    "user2@example.com",
+		FullName: "User Two",
+	}
+	repo.users["uuid-1"] = user1
+	repo.users["uuid-2"] = user2
+	
+	// When: Getting all users
+	users, err := service.GetAll()
+	
+	// Then: Should return all users
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if len(users) != 2 {
+		t.Errorf("expected 2 users, got %d", len(users))
+	}
+}
+
+func TestGetAll_Empty(t *testing.T) {
+	// Given: Empty repository
+	repo := newMockUserRepository()
+	service := NewUserService(repo)
+	
+	// When: Getting all users
+	users, err := service.GetAll()
+	
+	// Then: Should return empty list
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if len(users) != 0 {
+		t.Errorf("expected 0 users, got %d", len(users))
+	}
+}
