@@ -7,6 +7,8 @@ import (
 	"cruder/internal/service"
 
 	"github.com/gin-gonic/gin"
+
+	"log"
 )
 
 type UserController struct {
@@ -48,6 +50,7 @@ func (c *UserController) GetUserByID(ctx *gin.Context) {
 	}
 
 	user, err := c.service.GetByID(id)
+	// log.Printf("DEBUG: ID=%d, user=%v, err=%v", id, user, err)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
