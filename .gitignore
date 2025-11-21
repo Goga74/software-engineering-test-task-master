@@ -30,11 +30,5 @@ vendor/
 # Database
 postgres_data/
 
-# Docs
-*.md
-README_TESTS.md
-TASK.md
-DESCRIPTION*.md
-
 # Environment
 .env
