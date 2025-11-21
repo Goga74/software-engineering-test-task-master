@@ -33,7 +33,7 @@ coverage-html:
 validate: lint security test
 
 run:
-	go run cmd/api/v1/main.go
+	go run cmd/main.go
 
 db:
 	docker-compose up -d db
@@ -53,4 +53,4 @@ create-migration:
 	goose -dir ./migrations create $$name sql
 
 swagger:
-	swag init -g ./cmd/api/v1/main.go -o ./docs
+	swag init -g ./cmd/main.go -o ./docs
