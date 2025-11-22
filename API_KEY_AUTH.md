@@ -51,7 +51,9 @@ export X_API_KEY="your-secure-api-key-here"
 
 ## Testing the Middleware
 
-### 1. Request without X-API-Key header:
+### Basic Testing (Linux/Mac)
+
+#### 1. Request without X-API-Key header:
 ```bash
 curl -X GET http://localhost:8080/api/v1/users/
 
@@ -59,7 +61,7 @@ curl -X GET http://localhost:8080/api/v1/users/
 # {"error":"API key required"}
 ```
 
-### 2. Request with invalid X-API-Key:
+#### 2. Request with invalid X-API-Key:
 ```bash
 curl -X GET http://localhost:8080/api/v1/users/ -H "X-API-Key: wrong-key"
 
@@ -67,12 +69,158 @@ curl -X GET http://localhost:8080/api/v1/users/ -H "X-API-Key: wrong-key"
 # {"error":"Invalid API key"}
 ```
 
-### 3. Request with valid X-API-Key:
+#### 3. Request with valid X-API-Key:
 ```bash
 curl -X GET http://localhost:8080/api/v1/users/ -H "X-API-Key: dev-api-key-12345"
 
 # Response: HTTP 200
 # [user data...]
+```
+
+## Docker Testing
+
+### Step 1: Build and Run Application
+
+When running in Docker, pass the API key as an environment variable:
+```powershell
+# Stop and remove existing container
+docker stop my-app
+docker rm my-app
+
+# Rebuild image without cache to include latest code
+docker build -t software-engineering-app:latest . --no-cache
+
+# Start PostgreSQL (if not already running)
+docker start postgres
+
+# Run application with custom API key (production mode)
+docker run -d -p 8080:8080 --name my-app --network app-network `
+  -e POSTGRES_DSN="postgresql://postgres:postgres@postgres:5432/testdb?sslmode=disable" `
+  -e X_API_KEY="my-secure-production-key" `
+  software-engineering-app:latest
+
+# OR run with default key (development mode)
+docker run -d -p 8080:8080 --name my-app --network app-network `
+  -e POSTGRES_DSN="postgresql://postgres:postgres@postgres:5432/testdb?sslmode=disable" `
+  software-engineering-app:latest
+
+# Wait for startup
+Start-Sleep -Seconds 3
+```
+
+### Step 2: Verify API Key Configuration
+```powershell
+# Check that X_API_KEY environment variable is set in container
+docker exec my-app env | Select-String "API"
+
+# Expected output:
+# X_API_KEY=dev-api-key-12345
+
+# Check application startup logs
+docker logs my-app | Select-Object -First 15
+```
+
+### Step 3: Test Authentication (Windows PowerShell)
+
+**Important**: On Windows, use `curl.exe` (not PowerShell's `curl` alias) for proper header handling.
+
+#### Test 1: Request WITHOUT API key (Expected: 401 Unauthorized)
+```powershell
+curl.exe -i http://localhost:8080/api/v1/users/
+
+# Expected Response:
+# HTTP/1.1 401 Unauthorized
+# Content-Type: application/json; charset=utf-8
+# {"error":"API key required"}
+```
+
+#### Test 2: Request with INVALID API key (Expected: 403 Forbidden)
+```powershell
+curl.exe -i http://localhost:8080/api/v1/users/ -H "X-API-Key: wrong-key"
+
+# Expected Response:
+# HTTP/1.1 403 Forbidden
+# Content-Type: application/json; charset=utf-8
+# {"error":"Invalid API key"}
+```
+
+#### Test 3: Request with VALID API key (Expected: 200 OK)
+```powershell
+curl.exe -i http://localhost:8080/api/v1/users/ -H "X-API-Key: dev-api-key-12345"
+
+# Expected Response:
+# HTTP/1.1 200 OK
+# Content-Type: application/json; charset=utf-8
+# [{"id":1,"uuid":"...","username":"jdoe",...}, ...]
+```
+
+### Step 4: Test Other Endpoints
+```powershell
+# Test GET by username (with valid key)
+curl.exe -i http://localhost:8080/api/v1/users/username/jdoe -H "X-API-Key: dev-api-key-12345"
+
+# Test GET by ID (with valid key)
+curl.exe -i http://localhost:8080/api/v1/users/id/1 -H "X-API-Key: dev-api-key-12345"
+
+# Test CREATE endpoint (POST) - should fail without key
+curl.exe -i -X POST http://localhost:8080/api/v1/users/ `
+  -H "Content-Type: application/json" `
+  -d '{\"username\":\"testuser\",\"email\":\"test@example.com\",\"full_name\":\"Test User\"}'
+
+# Test CREATE endpoint (POST) - should succeed with valid key
+curl.exe -i -X POST http://localhost:8080/api/v1/users/ `
+  -H "Content-Type: application/json" `
+  -H "X-API-Key: dev-api-key-12345" `
+  -d '{\"username\":\"testuser\",\"email\":\"test@example.com\",\"full_name\":\"Test User\"}'
+```
+
+### Alternative: Using PowerShell Invoke-WebRequest
+```powershell
+# Without API key (401)
+try {
+    Invoke-WebRequest -Uri "http://localhost:8080/api/v1/users/" -Method GET
+} catch {
+    Write-Host "Status Code:" $_.Exception.Response.StatusCode.value__
+    Write-Host "Error:" $_.ErrorDetails.Message
+}
+
+# With invalid API key (403)
+try {
+    $headers = @{ "X-API-Key" = "wrong-key" }
+    Invoke-WebRequest -Uri "http://localhost:8080/api/v1/users/" -Headers $headers -Method GET
+} catch {
+    Write-Host "Status Code:" $_.Exception.Response.StatusCode.value__
+    Write-Host "Error:" $_.ErrorDetails.Message
+}
+
+# With valid API key (200)
+$headers = @{ "X-API-Key" = "dev-api-key-12345" }
+$response = Invoke-WebRequest -Uri "http://localhost:8080/api/v1/users/" -Headers $headers -Method GET
+Write-Host "Status Code:" $response.StatusCode
+Write-Host "Content:" $response.Content
+```
+
+### Step 5: View Request Logs
+
+The JSON logger middleware logs all requests, including authentication failures:
+```powershell
+# View all JSON request logs
+docker logs my-app | Select-String "Incoming request"
+
+# Expected output includes logs for all requests with different status codes:
+# - 401 for requests without API key
+# - 403 for requests with invalid API key
+# - 200 for successful authenticated requests
+```
+
+### Step 6: Cleanup
+```powershell
+# Stop and remove containers
+docker stop my-app postgres
+docker rm my-app postgres
+
+# Remove network (optional)
+docker network rm app-network
 ```
 
 ## Protected Routes
@@ -85,38 +233,6 @@ All the following routes now require X-API-Key authentication:
 - `POST /api/v1/users/`
 - `PATCH /api/v1/users/:uuid`
 - `DELETE /api/v1/users/:uuid`
-
-## Docker Testing
-
-When running in Docker, pass the API key as an environment variable:
-```powershell
-# Using custom API key
-docker run -d -p 8080:8080 --name my-app --network app-network `
-  -e POSTGRES_DSN="postgresql://postgres:postgres@postgres:5432/testdb?sslmode=disable" `
-  -e X_API_KEY="my-secure-production-key" `
-  software-engineering-app:latest
-
-# Using default key (development)
-docker run -d -p 8080:8080 --name my-app --network app-network `
-  -e POSTGRES_DSN="postgresql://postgres:postgres@postgres:5432/testdb?sslmode=disable" `
-  software-engineering-app:latest
-```
-
-### Testing with Docker:
-```powershell
-# Without API key (should fail with 401)
-curl http://localhost:8080/api/v1/users/
-
-# With invalid API key (should fail with 403)
-curl http://localhost:8080/api/v1/users/ -H "X-API-Key: wrong-key"
-
-# With valid API key (should succeed)
-curl http://localhost:8080/api/v1/users/ -H "X-API-Key: dev-api-key-12345"
-
-# Or using Invoke-WebRequest in PowerShell
-$headers = @{ "X-API-Key" = "dev-api-key-12345" }
-Invoke-WebRequest -Uri "http://localhost:8080/api/v1/users/" -Headers $headers
-```
 
 ## Security Best Practices
 
@@ -137,6 +253,32 @@ Invoke-WebRequest -Uri "http://localhost:8080/api/v1/users/" -Headers $headers
 1. **JSON Logger** - Logs all requests (including failed auth attempts)
 2. **API Key Auth** - Validates X-API-Key header
 3. **Route Handler** - Processes the actual request (if authentication passes)
+
+## Troubleshooting
+
+### Issue: Authentication not working (all requests succeed)
+
+**Solution**: Rebuild Docker image without cache to ensure latest code is included:
+```powershell
+docker stop my-app
+docker rm my-app
+docker rmi software-engineering-app:latest
+docker build -t software-engineering-app:latest . --no-cache
+```
+
+### Issue: curl command not working in PowerShell
+
+**Solution**: Use `curl.exe` instead of `curl` (which is an alias for Invoke-WebRequest):
+```powershell
+curl.exe -i http://localhost:8080/api/v1/users/ -H "X-API-Key: dev-api-key-12345"
+```
+
+### Issue: Cannot see HTTP status codes
+
+**Solution**: Add `-i` flag to curl.exe to include response headers:
+```powershell
+curl.exe -i http://localhost:8080/api/v1/users/
+```
 
 ## Implementation Status
 
