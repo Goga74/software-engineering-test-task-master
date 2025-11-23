@@ -57,6 +57,6 @@ This project includes comprehensive documentation for various aspects of develop
 ### Additional Documentation
 - **[CONFIG.md](CONFIG.md)** - Database configuration management guide - branch feature/config-refactoring
 - **[MIDDLEWARE_LOGGING.md](MIDDLEWARE_LOGGING.md)** - JSON logging middleware documentation - branch bonus_points
-- **[API_KEY_AUTH.md](BONUS_API_KEY_AUTH.md)** - API Key authentication implementation guide
+- **[API_KEY_AUTH.md](API_KEY_AUTH.md)** - API Key authentication implementation guide
 - **[K8S_DEPLOYMENT.md](K8S_DEPLOYMENT.md)** - Kubernetes deployment guide with manifests - branch feature/kubernetes-manifests
 
