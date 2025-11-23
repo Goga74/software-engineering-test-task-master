@@ -367,10 +367,10 @@ kubectl get secret app-secrets -n cruder-app -o jsonpath='{.data.DB_PASSWORD}' |
 
 ### Successfully Tested
 
-? **Test Date:** 2025-11-23  
-? **Minikube Version:** v1.37.0  
-? **Kubernetes Version:** v1.34.0  
-? **All Features Verified:**
+ **Test Date:** 2025-11-23  
+ **Minikube Version:** v1.37.0  
+ **Kubernetes Version:** v1.34.0  
+ **All Features Verified:**
 - Deployment with 2 replicas
 - LoadBalancer service  
 - API authentication (401/403/200)
