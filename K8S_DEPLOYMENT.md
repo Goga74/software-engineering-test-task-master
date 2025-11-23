@@ -91,6 +91,295 @@ kubectl wait --for=condition=ready pod -l app=cruder -n cruder-app --timeout=300
 kubectl get service app-service -n cruder-app
 ```
 
+## Local Testing with Minikube
+
+This section provides comprehensive guidance for testing Kubernetes manifests locally using Minikube.
+
+### Minikube Installation
+
+**Windows (PowerShell):**
+```powershell
+# Option 1: Via Chocolatey (recommended)
+choco install minikube -y
+choco install kubernetes-cli -y
+
+# Option 2: Via winget
+winget install Kubernetes.minikube
+winget install Kubernetes.kubectl
+
+# Verify installation
+minikube version
+kubectl version --client
+```
+
+### Start Minikube Cluster
+```powershell
+# Start Minikube with Docker driver
+minikube start --driver=docker
+
+# First run takes 2-5 minutes (downloads ~1GB)
+
+# Verify cluster status
+minikube status
+kubectl get nodes
+```
+
+Expected output:
+```
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   1m    v1.34.0
+```
+
+### Known Issues and Solutions
+
+#### Issue 1: Storage Provisioner Error
+
+**Symptom:** `storage-provisioner` pod shows `ErrImagePull`
+
+**Impact:** Minimal - basic PV functionality still works
+
+**Solution:** Can be safely ignored for testing
+
+#### Issue 2: Binary Permission Denied
+
+**Symptom:** `exec: "./main": stat ./main: permission denied`
+
+**Root Cause:** Binary lacks execute permissions for non-root user
+
+**Solution:** Already fixed in Dockerfile:
+```dockerfile
+RUN chmod +x /root/main
+```
+
+#### Issue 3: PVC Stuck in Pending
+
+**Symptom:** PostgreSQL StatefulSet PVC cannot bind to PV
+
+**Root Cause:** Storage provisioner may not function properly
+
+**Solution:** Use external PostgreSQL for testing:
+```powershell
+# Get Minikube host IP
+minikube ssh
+ip route show | grep default
+# Example: default via 192.168.49.1 dev eth0
+exit
+
+# Update ConfigMap with host IP
+# Edit k8s/configmap.yaml:
+DB_HOST: "192.168.49.1"  # Replace with your Minikube host IP
+
+# Apply and restart
+kubectl apply -f k8s/configmap.yaml
+kubectl rollout restart deployment app-deployment -n cruder-app
+```
+
+### Deploy to Minikube
+
+#### Step 1: Build and Load Image
+```powershell
+# Build Docker image
+docker build -t software-engineering-app:latest .
+
+# Load into Minikube
+minikube image load software-engineering-app:latest
+
+# Verify
+minikube image ls | Select-String "software-engineering-app"
+```
+
+#### Step 2: Update Secrets for Local Testing
+```powershell
+# Delete default secrets
+kubectl delete secret app-secrets -n cruder-app --ignore-not-found
+
+# Create with local credentials
+kubectl create secret generic app-secrets -n cruder-app `
+  --from-literal=DB_USER=postgres `
+  --from-literal=DB_PASSWORD=postgres `
+  --from-literal=X_API_KEY=prod-api-key-secure-12345
+```
+
+#### Step 3: Deploy Application
+```powershell
+# Apply manifests (skip postgres-statefulset if using external DB)
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+# Watch deployment progress
+kubectl get pods -n cruder-app --watch
+```
+
+Wait for `1/1 Running` status:
+```
+NAME                              READY   STATUS    RESTARTS   AGE
+app-deployment-xxxxxxxxxx-xxxxx   1/1     Running   0          45s
+app-deployment-xxxxxxxxxx-xxxxx   1/1     Running   0          45s
+```
+
+Press `Ctrl+C` to stop watching.
+
+#### Step 4: Enable LoadBalancer Access
+```powershell
+# Terminal 1: Start tunnel (keep running)
+minikube tunnel
+# May require administrator password
+
+# Terminal 2: Get external IP
+kubectl get service app-service -n cruder-app
+```
+
+Expected output:
+```
+NAME          TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+app-service   LoadBalancer   10.105.x.x     127.0.0.1     80:xxxxx/TCP   2m
+```
+
+#### Step 5: Test API Endpoints
+```powershell
+# Test with valid API key
+curl.exe http://127.0.0.1/api/v1/users/ -H "X-API-Key: prod-api-key-secure-12345"
+
+# Expected: JSON array with user data
+# [{"id":1,"uuid":"...","username":"jdoe",...}, ...]
+
+# Test without API key (should return 401)
+curl.exe http://127.0.0.1/api/v1/users/
+
+# Expected: {"error":"API key required"}
+
+# Test with invalid API key (should return 403)
+curl.exe http://127.0.0.1/api/v1/users/ -H "X-API-Key: wrong-key"
+
+# Expected: {"error":"Invalid API key"}
+```
+
+### View Application Logs
+```powershell
+# All application pods
+kubectl logs -l app=cruder -n cruder-app --tail=50 -f
+
+# Specific pod
+kubectl logs <pod-name> -n cruder-app --tail=100
+
+# Describe pod (view events)
+kubectl describe pod <pod-name> -n cruder-app
+```
+
+### Minikube Resource Management
+
+**When Running:**
+- RAM: 2-3GB
+- CPU: 1-2 cores  
+- Disk: ~3GB
+
+**When Stopped:**
+- RAM: 0GB
+- CPU: 0%
+- Disk: ~3GB (persisted)
+```powershell
+# Stop Minikube (preserves state, frees resources)
+minikube stop
+
+# Start again when needed
+minikube start
+
+# Delete cluster entirely (removes all data)
+minikube delete
+```
+
+### Cleanup After Testing
+```powershell
+# Stop tunnel (Ctrl+C in tunnel terminal)
+
+# Delete application resources
+kubectl delete namespace cruder-app
+
+# Stop Minikube
+minikube stop
+
+# Optional: Delete Minikube VM
+minikube delete
+```
+
+### ConfigMap Note for Local Testing
+
+The `k8s/configmap.yaml` includes a helpful comment:
+```yaml
+data:
+  DB_HOST: "postgres-service"
+  # for local debug - specify IP for host.minikube.internal here like DB_HOST: "192.168.49.1"
+```
+
+This IP (192.168.49.1) is:
+- Safe to document - it's a local RFC1918 private IP
+- Only works within Minikube environment
+- Changes with each Minikube instance
+- Helps developers understand local testing
+
+### Production vs. Local Differences
+
+| Aspect | Minikube (Local) | Production (Cloud K8s) |
+|--------|------------------|------------------------|
+| **PostgreSQL** | External Docker or local StatefulSet | Managed Database Service |
+| **Storage** | hostPath provisioner | Cloud persistent volumes |
+| **LoadBalancer** | minikube tunnel (127.0.0.1) | Cloud LB (public IP) |
+| **Secrets** | kubectl create manual | CI/CD automation or Sealed Secrets |
+| **Container Registry** | Local image load | Docker Hub, ECR, GCR, DOCR |
+| **DNS** | Requires host IP workaround | Native service discovery |
+| **Startup** | Manual (`minikube start`) | Always available |
+
+### Troubleshooting Minikube
+
+**Problem:** Minikube won't start
+```powershell
+# Check Docker is running
+docker ps
+
+# Delete and recreate
+minikube delete
+minikube start --driver=docker
+```
+
+**Problem:** Image not found in Minikube
+```powershell
+# Verify image loaded
+minikube image ls | Select-String "software-engineering-app"
+
+# Reload if missing
+minikube image load software-engineering-app:latest
+```
+
+**Problem:** Pods crash with database connection error
+```powershell
+# Check logs
+kubectl logs -l app=cruder -n cruder-app
+
+# Verify ConfigMap has correct DB_HOST
+kubectl get configmap app-config -n cruder-app -o yaml
+
+# Verify secrets have correct credentials
+kubectl get secret app-secrets -n cruder-app -o jsonpath='{.data.DB_PASSWORD}' | base64 -d
+```
+
+### Successfully Tested
+
+? **Test Date:** 2025-11-23  
+? **Minikube Version:** v1.37.0  
+? **Kubernetes Version:** v1.34.0  
+? **All Features Verified:**
+- Deployment with 2 replicas
+- LoadBalancer service  
+- API authentication (401/403/200)
+- Database connectivity
+- Health checks (liveness/readiness)
+- Resource limits
+
+---
+
 ## Detailed Deployment Steps
 
 ### Step 1: Customize Secrets (IMPORTANT)
