@@ -1,0 +1,24 @@
+# Database Configuration Example
+# Copy this file to config.yaml and customize for your environment
+# Non-sensitive database connection parameters
+# Sensitive data (username, password) should be provided via environment variables:
+# - DB_USER (required)
+# - DB_PASSWORD (required)
+#
+# Optional environment variable overrides:
+# - DB_HOST (overrides database.host)
+# - DB_PORT (overrides database.port)
+# - DB_NAME (overrides database.name)
+# - DB_SSLMODE (overrides database.sslmode)
+#
+# For backward compatibility with existing deployments:
+# - POSTGRES_DSN (if set, all other config is ignored)
+
+database:
+  host: localhost
+  port: 5432
+  name: postgres
+  sslmode: disable
+  # Additional PostgreSQL connection parameters can be added here
+  # connect_timeout: 10
+  # application_name: cruder
