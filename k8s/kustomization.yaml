@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace to deploy all resources
+namespace: cruder-app
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: cruder
+  app.kubernetes.io/managed-by: kustomize
+
+# Resources to deploy
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - postgres-pvc.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - deployment.yaml
+  - service.yaml
+
+# Images (can be used to override image tags)
+images:
+  - name: software-engineering-app
+    newTag: latest
+
+# Configuration for generating ConfigMaps and Secrets
+# This can be used instead of separate files if preferred
+# configMapGenerator:
+#   - name: app-config
+#     literals:
+#       - DB_HOST=postgres-service
+#       - DB_PORT=5432
+#       - DB_NAME=testdb
+
+# secretGenerator:
+#   - name: app-secrets
+#     literals:
+#       - DB_USER=postgres
+#       - DB_PASSWORD=postgres123
+#       - X_API_KEY=prod-api-key-secure-12345

@@ -36,3 +36,4 @@ postgres_data/
 # Configuration (keep config.yaml in repo as it contains no secrets)
 # If you need to customize config.yaml locally, copy config.example.yaml to config.local.yaml
 config.local.yaml
+k8s/*-local.yaml
