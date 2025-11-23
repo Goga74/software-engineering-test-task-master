@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cruder/internal/config"
 	"cruder/internal/controller"
 	"cruder/internal/handler"
 	"cruder/internal/repository"
@@ -12,9 +13,12 @@ import (
 )
 
 func main() {
-	dsn := os.Getenv("POSTGRES_DSN")
-	if dsn == "" {
-		dsn = "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+	// Load database configuration
+	// Supports backward compatibility: uses POSTGRES_DSN if set,
+	// otherwise builds DSN from config.yaml + environment variables
+	dsn, err := config.GetDSN("config.yaml")
+	if err != nil {
+		log.Fatalf("failed to load database configuration: %v", err)
 	}
 
 	// Load API key from environment variable
