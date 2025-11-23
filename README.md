@@ -39,3 +39,24 @@ goose -dir ./migrations $(DB_DRIVER) $(DB_STRING) up
 ```
 go run cmd/main.go
 ```
+
+## Documentation
+
+This project includes comprehensive documentation for various aspects of development, deployment, and testing:
+
+### Task Requirements
+- **[TASK.md](TASK.md)** - Original task description and requirements
+
+### Deployment
+- **[README_DOCKER.md](README_DOCKER.md)** - Docker deployment guide with optimized multi-stage build process
+
+### Testing
+- **[README_UNIT_TESTS.md](README_UNIT_TESTS.md)** - Unit tests guide and how to run them
+- **[TESTING.md](TESTING.md)** - Comprehensive testing guide including integration tests with real PostgreSQL database
+
+### Additional Documentation
+- **[CONFIG.md](CONFIG.md)** - Database configuration management guide
+- **[BONUS_LOGGING.md](BONUS_LOGGING.md)** - JSON logging middleware documentation
+- **[BONUS_API_KEY_AUTH.md](BONUS_API_KEY_AUTH.md)** - API Key authentication implementation guide
+- **[K8S_DEPLOYMENT.md](K8S_DEPLOYMENT.md)** - Kubernetes deployment guide with manifests
+
