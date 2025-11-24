@@ -15,51 +15,43 @@ jobs:
     
     - name: Stop old container
       run: |
-        docker stop my-app 2>"`$null"
-        docker rm my-app 2>"`$null"
-      continue-on-error: true
-      shell: powershell
+        docker stop my-app 2>nul || echo Container my-app not running
+        docker rm my-app 2>nul || echo Container my-app already removed
+      shell: cmd
     
     - name: Build Docker image
       run: docker build -t software-engineering-app:latest .
-      shell: powershell
+      shell: cmd
     
-    - name: Start PostgreSQL if not running
+    - name: Check and start PostgreSQL
       run: |
-        `$containerName = docker ps -a -f name=postgres --format '{{.Names}}'
-        if (`$containerName -eq 'postgres') {
-          Write-Host 'Starting existing postgres container'
+        FOR /F %%i IN ('docker ps -aq -f name=postgres') DO SET PGCONTAINER=%%i
+        IF DEFINED PGCONTAINER (
           docker start postgres
-        } else {
-          Write-Host 'Creating new postgres container'
+          echo Started existing postgres
+        ) ELSE (
           docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=testdb -p 5432:5432 postgres:16-alpine
-        }
-      shell: powershell
+          echo Created new postgres
+        )
+      shell: cmd
     
     - name: Wait for PostgreSQL
-      run: Start-Sleep -Seconds 10
-      shell: powershell
+      run: timeout /t 10 /nobreak
+      shell: cmd
     
     - name: Deploy application
-      run: docker run -d --name my-app -p 8080:8080 -e POSTGRES_DSN='host=host.docker.internal port=5432 user=postgres password=postgres dbname=testdb sslmode=disable' software-engineering-app:latest
-      shell: powershell
+      run: docker run -d --name my-app -p 8080:8080 -e POSTGRES_DSN="host=host.docker.internal port=5432 user=postgres password=postgres dbname=testdb sslmode=disable" software-engineering-app:latest
+      shell: cmd
     
-    - name: Wait for app to start
-      run: Start-Sleep -Seconds 5
-      shell: powershell
+    - name: Wait for app
+      run: timeout /t 5 /nobreak
+      shell: cmd
     
     - name: Verify deployment
-      run: |
-        try {
-          `$response = Invoke-WebRequest -Uri http://localhost:8080/api/v1/users/ -UseBasicParsing -ErrorAction Stop
-          Write-Host 'Deployment successful! Status:' `$response.StatusCode
-        } catch {
-          Write-Host 'Deployment verification failed:' `$_.Exception.Message
-          exit 1
-        }
-      shell: powershell
+      run: curl -f http://localhost:8080/api/v1/users/ || exit 1
+      shell: cmd
       
     - name: Show container logs
       run: docker logs my-app --tail 30
-      shell: powershell
+      shell: cmd
       if: always()
