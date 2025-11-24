@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: cruder-app
+  labels:
+    app: postgres
+    component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 1Gi
+
+  # Storage class (uncomment and modify based on your cluster)
+  # storageClassName: do-block-storage  # DigitalOcean
+  # storageClassName: gp2               # AWS EBS
+  # storageClassName: standard          # GCP
+  # storageClassName: default           # Default storage class
