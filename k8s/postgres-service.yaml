@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: cruder-app
+  labels:
+    app: postgres
+    component: database
+spec:
+  type: ClusterIP
+  # Use None for headless service if needed for StatefulSet
+  # clusterIP: None
+
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+
+  selector:
+    app: postgres
+    component: database

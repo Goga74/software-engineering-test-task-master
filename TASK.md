@@ -106,9 +106,7 @@ Write CD pipeline via Github Actions to deploy the changes to remote environment
 
 The following feature branches were created during implementation:
 
-- `feature/integration-testing` - Comprehensive integration tests with real PostgreSQL
 - `bonus_points` - Aggregates all bonus tasks implementation
-- `feature/config-refactoring` - Database configuration management refactoring
 - `feature/kubernetes-manifests` - Kubernetes deployment manifests
 
 **Note on branching approach**: While creating separate feature branches for each individual task (Task1, Task2, etc.) would be a best practice, this approach was deemed excessive for the initial simple tasks. Instead, task references were clearly indicated in commit messages (e.g., "Task1: ...", "Task2: ...") to maintain traceability.

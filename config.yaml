@@ -1,0 +1,14 @@
+# Database Configuration
+# Non-sensitive database connection parameters
+# Sensitive data (username, password) should be provided via environment variables:
+# - DB_USER
+# - DB_PASSWORD
+
+database:
+  host: postgres
+  port: 5432
+  name: testdb
+  sslmode: disable
+  # Additional PostgreSQL connection parameters can be added here
+  # connect_timeout: 10
+  # application_name: cruder
