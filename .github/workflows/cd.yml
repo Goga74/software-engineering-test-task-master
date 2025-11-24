@@ -15,51 +15,52 @@ jobs:
     
     - name: Stop old container
       run: |
-        docker stop my-app 2>`$null
-        docker rm my-app 2>`$null
+        docker stop my-app 2>"`$null"
+        docker rm my-app 2>"`$null"
       continue-on-error: true
-      shell: powershell
+      shell: pwsh
     
     - name: Build Docker image
       run: docker build -t software-engineering-app:latest .
-      shell: powershell
+      shell: pwsh
     
     - name: Start PostgreSQL if not running
       run: |
-        `$container = docker ps -a --filter "name=postgres" --format "{{.Names}}"
-        if (`$container -eq "postgres") {
+        `$containerName = docker ps -a -f "name=postgres" --format "{{.Names}}"
+        if (`$containerName -match "postgres") {
+          Write-Host "Starting existing postgres container"
           docker start postgres
         } else {
-          docker run -d ``
-            --name postgres ``
-            -e POSTGRES_PASSWORD=postgres ``
-            -e POSTGRES_DB=testdb ``
-            -p 5432:5432 ``
-            postgres:16-alpine
+          Write-Host "Creating new postgres container"
+          docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=testdb -p 5432:5432 postgres:16-alpine
         }
-      shell: powershell
+      shell: pwsh
     
     - name: Wait for PostgreSQL
-      run: Start-Sleep -Seconds 5
-      shell: powershell
+      run: Start-Sleep -Seconds 10
+      shell: pwsh
     
     - name: Deploy application
       run: |
-        docker run -d ``
-          --name my-app ``
-          -p 8080:8080 ``
-          -e POSTGRES_DSN="host=host.docker.internal port=5432 user=postgres password=postgres dbname=testdb sslmode=disable" ``
-          software-engineering-app:latest
-      shell: powershell
+        docker run -d --name my-app -p 8080:8080 -e POSTGRES_DSN="host=host.docker.internal port=5432 user=postgres password=postgres dbname=testdb sslmode=disable" software-engineering-app:latest
+      shell: pwsh
+    
+    - name: Wait for app to start
+      run: Start-Sleep -Seconds 5
+      shell: pwsh
     
     - name: Verify deployment
       run: |
-        Start-Sleep -Seconds 3
-        Invoke-WebRequest -Uri http://localhost:8080/api/v1/users/ -UseBasicParsing
-        Write-Host "✅ Deployment successful!"
-      shell: powershell
+        try {
+          `$response = Invoke-WebRequest -Uri http://localhost:8080/api/v1/users/ -UseBasicParsing -ErrorAction Stop
+          Write-Host "✅ Deployment successful! Status: `$(`$response.StatusCode)"
+        } catch {
+          Write-Host "❌ Deployment verification failed: `$_"
+          exit 1
+        }
+      shell: pwsh
       
     - name: Show container logs
-      run: docker logs my-app --tail 20
-      shell: powershell
+      run: docker logs my-app --tail 30
+      shell: pwsh
       if: always()
