@@ -37,3 +37,4 @@ postgres_data/
 # If you need to customize config.yaml locally, copy config.example.yaml to config.local.yaml
 config.local.yaml
 k8s/*-local.yaml
+actions-runner
