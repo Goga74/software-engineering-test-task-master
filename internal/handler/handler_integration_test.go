@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	// Run migrations
 	if err := runMigrations(testDB); err != nil {
 		fmt.Printf("Failed to run migrations: %v\n", err)
-		testDB.Close()
+		_ = testDB.Close() // Ignore error on cleanup
 		os.Exit(1)
 	}
 
@@ -49,7 +49,9 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// Cleanup: Close database connection
-	testDB.Close()
+	if err := testDB.Close(); err != nil {
+		fmt.Printf("Warning: Failed to close test database: %v\n", err)
+	}
 
 	os.Exit(code)
 }
@@ -89,6 +91,7 @@ func runMigrations(db *sql.DB) error {
 			uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL
 		);
 	`
+
 	_, err := db.Exec(createTableSQL)
 	return err
 }
@@ -96,6 +99,7 @@ func runMigrations(db *sql.DB) error {
 // setupTestRouter creates a test router with all handlers
 func setupTestRouter(db *sql.DB, apiKey string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
+
 	router := gin.New()
 
 	// Add simple API key middleware for testing
@@ -139,6 +143,7 @@ func setupTestRouter(db *sql.DB, apiKey string) *gin.Engine {
 // clearDatabase removes all test data between tests
 func clearDatabase(t *testing.T) {
 	t.Helper()
+
 	_, err := testDB.Exec("DELETE FROM users")
 	if err != nil {
 		t.Fatalf("Failed to clear database: %v", err)
@@ -150,32 +155,38 @@ func clearDatabase(t *testing.T) {
 // insertTestUser inserts a user into test database and returns the created user with generated UUID
 func insertTestUser(t *testing.T, user *model.User) *model.User {
 	t.Helper()
+
 	query := `
 		INSERT INTO users (username, email, full_name)
 		VALUES ($1, $2, $3)
 		RETURNING id, uuid
 	`
+
 	err := testDB.QueryRow(query, user.Username, user.Email, user.FullName).Scan(&user.ID, &user.UUID)
 	if err != nil {
 		t.Fatalf("Failed to insert test user: %v", err)
 	}
+
 	return user
 }
 
 // userExists checks if a user exists in the database by UUID
 func userExists(t *testing.T, uuid string) bool {
 	t.Helper()
+
 	var count int
 	err := testDB.QueryRow("SELECT COUNT(*) FROM users WHERE uuid = $1", uuid).Scan(&count)
 	if err != nil {
 		t.Fatalf("Failed to check if user exists: %v", err)
 	}
+
 	return count > 0
 }
 
 // getUserByUUID retrieves a user from the database by UUID
 func getUserByUUID(t *testing.T, uuid string) *model.User {
 	t.Helper()
+
 	var user model.User
 	query := "SELECT id, uuid, username, email, full_name FROM users WHERE uuid = $1"
 	err := testDB.QueryRow(query, uuid).Scan(&user.ID, &user.UUID, &user.Username, &user.Email, &user.FullName)
@@ -185,6 +196,7 @@ func getUserByUUID(t *testing.T, uuid string) *model.User {
 	if err != nil {
 		t.Fatalf("Failed to get user by UUID: %v", err)
 	}
+
 	return &user
 }
 
@@ -406,7 +418,6 @@ func TestCreateUser_Success(t *testing.T) {
 	if createdUser.UUID == "" {
 		t.Error("expected UUID to be generated")
 	}
-
 	if createdUser.Username != "newuser" {
 		t.Errorf("expected username 'newuser', got '%s'", createdUser.Username)
 	}
@@ -494,7 +505,6 @@ func TestUpdateUser_Success(t *testing.T) {
 	if updatedUser == nil {
 		t.Fatal("user not found after update")
 	}
-
 	if updatedUser.Username != "newusername" {
 		t.Errorf("expected username 'newusername', got '%s'", updatedUser.Username)
 	}
