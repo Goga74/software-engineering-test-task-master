@@ -102,6 +102,11 @@ Write CD pipeline via Github Actions to deploy the changes to remote environment
 
 **Author**: Igor Zamiatin
 
+All tasks are solved, except 2 tasks from "Bonus Points" section:
+- Terraform
+- CD pipeline created, but has some errors.
+I am in the process of solving CD pipeline.
+
 ### Branch Strategy
 
 **Note on branching approach**: While creating separate feature branches for each individual task (Task1, Task2, etc.) would be a best practice, this approach was deemed excessive for the initial simple tasks. Instead, task references were clearly indicated in commit messages (e.g., "Task1: ...", "Task2: ...") to maintain traceability.
